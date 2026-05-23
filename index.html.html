@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sandeep Personal Management">
+<meta name="application-name" content="Sandeep Personal Management">
+<meta name="theme-color" content="#0a0e1a">
+<title>Sandeep Personal Management</title>
+<link rel="manifest" id="pwaManifest">
+<link rel="apple-touch-icon" id="appleIcon">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #151d2e;
+    --border: #1e2d45;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --radius: 14px;
+    --font: 'Outfit', sans-serif;
+    --mono: 'Space Mono', monospace;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    background: rgba(10,14,26,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items:center; justify-content:space-between;
+  }
+  .topbar h1 { font-size:16px; font-weight:700; letter-spacing:0.5px; color:var(--accent); }
+  .topbar .date { font-size:12px; color:var(--text2); font-family:var(--mono); }
+  .notif-dot { width:8px; height:8px; background:var(--red); border-radius:50%; display:none; }
+  .notif-dot.active { display:inline-block; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom:0; left:0; right:0; z-index:100;
+    background: rgba(10,14,26,0.97);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+  .nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    padding: 10px 4px 6px;
+    cursor:pointer; transition: all 0.2s;
+    border:none; background:none; color:var(--text3);
+    font-family: var(--font); font-size:10px; gap:4px;
+  }
+  .nav-item .icon { font-size:20px; transition:transform 0.2s; }
+  .nav-item.active { color:var(--accent); }
+  .nav-item.active .icon { transform: scale(1.15); }
+
+  /* PAGES */
+  .page { display:none; padding: 70px 16px 80px; min-height:100vh; }
+  .page.active { display:block; }
+
+  /* SECTION HEADER */
+  .sec-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .sec-title { font-size:20px; font-weight:700; }
+  .sec-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .btn-add {
+    background: var(--accent); color:#fff; border:none;
+    padding: 8px 14px; border-radius:8px; font-size:13px;
+    font-family:var(--font); font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+  }
+  .btn-add:active { opacity:0.8; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  /* TABS */
+  .tabs { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab {
+    padding: 6px 14px; border-radius:20px; font-size:12px; font-weight:600;
+    border: 1px solid var(--border); background:transparent; color:var(--text2);
+    cursor:pointer; white-space:nowrap; font-family:var(--font); transition:all 0.2s;
+  }
+  .tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  /* TASK ITEM */
+  .task-item {
+    display:flex; align-items:flex-start; gap:10px;
+    padding: 12px 14px;
+    background: var(--card); border:1px solid var(--border);
+    border-radius:10px; margin-bottom:8px; transition:opacity 0.3s;
+  }
+  .task-item.done { opacity:0.45; }
+  .task-item.done .task-title { text-decoration:line-through; color:var(--text3); }
+  .task-check {
+    width:20px; height:20px; border-radius:50%;
+    border:2px solid var(--border); cursor:pointer;
+    flex-shrink:0; margin-top:1px; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent;
+  }
+  .task-check.checked { background:var(--green); border-color:var(--green); }
+  .task-title { font-size:14px; font-weight:500; flex:1; }
+  .task-meta { font-size:11px; color:var(--text2); margin-top:3px; }
+  .task-del { background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:2px; }
+  .priority { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; }
+  .p-high { background:rgba(239,68,68,0.15); color:var(--red); }
+  .p-med { background:rgba(245,158,11,0.15); color:var(--yellow); }
+  .p-low { background:rgba(16,185,129,0.15); color:var(--green); }
+
+  /* FINANCE */
+  .fin-summary {
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px;
+  }
+  .fin-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:12px; text-align:center;
+  }
+  .fin-card .amount { font-size:16px; font-weight:700; font-family:var(--mono); }
+  .fin-card .label { font-size:10px; color:var(--text2); margin-top:4px; }
+  .fin-card.income .amount { color:var(--green); }
+  .fin-card.expense .amount { color:var(--red); }
+  .fin-card.balance .amount { color:var(--accent); }
+
+  /* HABIT */
+  .habit-item { padding:12px 14px; background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; }
+  .habit-top { display:flex; align-items:center; justify-content:space-between; }
+  .habit-name { font-size:14px; font-weight:600; }
+  .habit-streak { font-size:11px; color:var(--yellow); font-family:var(--mono); }
+  .habit-dots { display:flex; gap:4px; margin-top:8px; }
+  .habit-dot { width:10px; height:10px; border-radius:50%; background:var(--border); }
+  .habit-dot.done { background:var(--green); }
+  .habit-dot.today { border:2px solid var(--accent); }
+
+  /* MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--bg2); border-radius:20px 20px 0 0;
+    width:100%; max-width:600px; padding:24px 20px 40px;
+    border-top:1px solid var(--border);
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .modal-title { font-size:17px; font-weight:700; margin-bottom:16px; }
+  .form-group { margin-bottom:12px; }
+  .form-label { font-size:12px; color:var(--text2); margin-bottom:5px; display:block; font-weight:600; }
+  .form-input, .form-select, .form-textarea {
+    width:100%; background:var(--bg3); border:1px solid var(--border);
+    color:var(--text); padding:10px 12px; border-radius:8px;
+    font-family:var(--font); font-size:14px;
+  }
+  .form-textarea { min-height:80px; resize:vertical; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline:none; border-color:var(--accent);
+  }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn-row { display:flex; gap:10px; margin-top:16px; }
+  .btn-cancel { flex:1; padding:11px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); color:var(--text2); font-family:var(--font); font-size:14px; cursor:pointer; }
+  .btn-save { flex:2; padding:11px; border-radius:8px; background:var(--accent); border:none; color:#fff; font-family:var(--font); font-size:14px; font-weight:700; cursor:pointer; }
+
+  /* STUDY */
+  .study-card-wrap { perspective:800px; margin-bottom:16px; }
+  .study-card-inner {
+    background: linear-gradient(135deg, #1a2235, #0f1827);
+    border:1px solid var(--accent);
+    border-radius:16px; padding:28px 20px;
+    min-height:160px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    cursor:pointer; transition:transform 0.6s;
+    transform-style:preserve-3d; position:relative;
+  }
+  .study-card-inner.flipped { transform:rotateY(180deg); }
+  .card-front, .card-back {
+    backface-visibility:hidden; position:absolute;
+    width:100%; padding:20px; text-align:center;
+  }
+  .card-back { transform:rotateY(180deg); }
+  .card-q { font-size:16px; font-weight:600; line-height:1.5; }
+  .card-a { font-size:15px; color:var(--accent2); line-height:1.5; }
+  .card-hint { font-size:11px; color:var(--text3); margin-top:8px; }
+  .study-btns { display:flex; gap:8px; margin-top:12px; }
+  .sm2-btn {
+    flex:1; padding:10px 6px; border-radius:8px; border:none;
+    font-family:var(--font); font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .sm2-again { background:rgba(239,68,68,0.2); color:var(--red); border:1px solid var(--red); }
+  .sm2-hard  { background:rgba(245,158,11,0.2); color:var(--yellow); border:1px solid var(--yellow); }
+  .sm2-good  { background:rgba(59,130,246,0.2); color:var(--accent); border:1px solid var(--accent); }
+  .sm2-easy  { background:rgba(16,185,129,0.2); color:var(--green); border:1px solid var(--green); }
+  .due-badge {
+    display:inline-block; padding:3px 10px; border-radius:10px;
+    font-size:11px; font-weight:700; margin-right:6px;
+  }
+  .due-today { background:rgba(239,68,68,0.15); color:var(--red); }
+  .due-soon  { background:rgba(245,158,11,0.15); color:var(--yellow); }
+  .due-later { background:rgba(16,185,129,0.15); color:var(--green); }
+  .stats-row { display:flex; gap:8px; margin-bottom:14px; }
+  .stat-box { flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+  .stat-num { font-size:22px; font-weight:700; font-family:var(--mono); }
+  .stat-lbl { font-size:10px; color:var(--text2); margin-top:2px; }
+
+  /* GOALS */
+  .goal-item { padding:14px; background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
+  .goal-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .goal-title { font-size:14px; font-weight:600; }
+  .goal-pct { font-size:13px; font-weight:700; font-family:var(--mono); color:var(--accent); }
+  .progress-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width 0.5s; }
+
+  /* CALENDAR */
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:12px; }
+  .cal-day-name { text-align:center; font-size:10px; color:var(--text3); padding:4px 0; font-weight:700; }
+  .cal-day { text-align:center; padding:6px 2px; font-size:13px; border-radius:6px; cursor:pointer; }
+  .cal-day.today { background:var(--accent); color:#fff; font-weight:700; }
+  .cal-day.has-event { position:relative; }
+  .cal-day.has-event::after { content:''; position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--yellow); }
+  .cal-day.other-month { color:var(--text3); }
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-nav button { background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:8px; cursor:pointer; font-size:16px; }
+  .cal-month { font-size:16px; font-weight:700; }
+
+  /* NOTES */
+  .note-item { padding:12px 14px; background:var(--card); border-left:3px solid var(--accent); border-radius:10px; margin-bottom:8px; }
+  .note-title { font-size:14px; font-weight:600; }
+  .note-preview { font-size:12px; color:var(--text2); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .note-meta { font-size:11px; color:var(--text3); margin-top:6px; }
+
+  /* EMPTY STATE */
+  .empty { text-align:center; padding:40px 20px; color:var(--text3); }
+  .empty .emoji { font-size:40px; margin-bottom:10px; }
+  .empty p { font-size:14px; }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#1e293b; border:1px solid var(--border); color:var(--text);
+    padding:10px 18px; border-radius:10px; font-size:13px; z-index:300;
+    opacity:0; transition:all 0.3s; pointer-events:none; white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* SWIPE DELETE */
+  .swipe-wrap { position:relative; overflow:hidden; border-radius:10px; margin-bottom:8px; }
+  .swipe-bg { position:absolute; right:0; top:0; bottom:0; width:70px; background:var(--red); display:flex; align-items:center; justify-content:center; font-size:20px; border-radius:10px; }
+
+  /* NOTIFICATION SETTINGS */
+  .notif-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
+  .notif-row:last-of-type { border-bottom:none; }
+  .notif-label { font-size:14px; font-weight:500; }
+  .notif-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+  .toggle-wrap { position:relative; width:44px; height:24px; }
+  .toggle-wrap input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:var(--border); border-radius:12px; cursor:pointer; transition:0.3s; }
+  .toggle-slider:before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.3s; }
+  .toggle-wrap input:checked + .toggle-slider { background:var(--accent); }
+  .toggle-wrap input:checked + .toggle-slider:before { transform:translateX(20px); }
+  .notif-status { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; }
+  .notif-status.granted { background:rgba(16,185,129,0.15); color:var(--green); }
+  .notif-status.denied  { background:rgba(239,68,68,0.15);  color:var(--red); }
+  .notif-status.default { background:rgba(245,158,11,0.15); color:var(--yellow); }
+
+  select option { background: #1a2235; }
+
+  .section-divider { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin:16px 0 8px; }
+
+  /* STUDY DECK LIST */
+  .deck-item { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; }
+  .deck-info .deck-q { font-size:14px; font-weight:500; }
+  .deck-info .deck-meta { font-size:11px; color:var(--text2); margin-top:3px; }
+  .deck-actions { display:flex; gap:6px; }
+  .deck-actions button { background:none; border:1px solid var(--border); color:var(--text2); padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; font-family:var(--font); }
+
+  .review-mode { display:none; }
+  .review-mode.active { display:block; }
+  .list-mode { display:block; }
+  .list-mode.hidden { display:none; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <h1>⚡ Sandeep PM</h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="date" id="topDate"></span>
+    <span class="notif-dot" id="notifDot"></span>
+  </div>
+</div>
+
+<!-- PAGES -->
+
+<!-- HOME / DASHBOARD -->
+<div class="page active" id="page-home">
+  <div class="sec-header">
+    <div><div class="sec-title">Good day, Sandeep 👋</div><div class="sec-sub" id="dashSub"></div></div>
+  </div>
+  <div id="dashCards"></div>
+</div>
+
+<!-- TASKS -->
+<div class="page" id="page-tasks">
+  <div class="sec-header">
+    <div><div class="sec-title">Tasks</div></div>
+    <button class="btn-add" onclick="openModal('task')">+ Add</button>
+  </div>
+  <div class="tabs" id="taskTabs"></div>
+  <div id="taskList"></div>
+</div>
+
+<!-- NOTES -->
+<div class="page" id="page-notes">
+  <div class="sec-header">
+    <div><div class="sec-title">Notes & Journal</div></div>
+    <button class="btn-add" onclick="openModal('note')">+ Add</button>
+  </div>
+  <div class="tabs" id="noteTabs"></div>
+  <div id="noteList"></div>
+</div>
+
+<!-- FINANCE -->
+<div class="page" id="page-finance">
+  <div class="sec-header"><div class="sec-title">Finance</div><button class="btn-add" onclick="openModal('finance')">+ Add</button></div>
+  <div class="fin-summary">
+    <div class="fin-card income"><div class="amount" id="finIncome">0</div><div class="label">Income</div></div>
+    <div class="fin-card expense"><div class="amount" id="finExpense">0</div><div class="label">Expense</div></div>
+    <div class="fin-card balance"><div class="amount" id="finBalance">0</div><div class="label">Balance</div></div>
+  </div>
+  <div id="finList"></div>
+</div>
+
+<!-- GOALS & HABITS -->
+<div class="page" id="page-goals">
+  <div class="tabs">
+    <button class="tab active" onclick="switchGoalTab('goals',this)">🎯 Goals</button>
+    <button class="tab" onclick="switchGoalTab('habits',this)">🔥 Habits</button>
+  </div>
+  <div id="goalsSection">
+    <div class="sec-header"><div class="sec-title">Goals</div><button class="btn-add" onclick="openModal('goal')">+ Add</button></div>
+    <div id="goalList"></div>
+  </div>
+  <div id="habitsSection" style="display:none">
+    <div class="sec-header"><div class="sec-title">Habits</div><button class="btn-add" onclick="openModal('habit')">+ Add</button></div>
+    <div id="habitList"></div>
+  </div>
+</div>
+
+<!-- STUDY / SPACED REP -->
+<div class="page" id="page-study">
+  <div class="sec-header">
+    <div><div class="sec-title">🧠 Study</div></div>
+    <button class="btn-add" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2)" onclick="openModal('notifSettings')">🔔 Settings</button>
+  </div>
+
+  <!-- Study Mode Tabs -->
+  <div class="tabs" id="studyModeTabs">
+    <button class="tab active" onclick="switchStudyMode('anki',this)">🃏 Anki / SM-2</button>
+    <button class="tab" onclick="switchStudyMode('simple',this)">⏰ Simple Reminders</button>
+  </div>
+
+  <!-- ANKI MODE -->
+  <div id="ankiMode">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="btn-add" onclick="openModal('card')">+ Flashcard</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="sDue">0</div><div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box"><div class="stat-num" id="sTotal">0</div><div class="stat-lbl">Total Cards</div></div>
+      <div class="stat-box"><div class="stat-num" id="sMastered">0</div><div class="stat-lbl">Mastered</div></div>
+    </div>
+    <div class="list-mode" id="studyListMode">
+      <div id="dueSection"></div>
+      <div id="allCardsSection"></div>
+    </div>
+  </div>
+
+  <!-- SIMPLE REMINDERS MODE -->
+  <div id="simpleMode" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="btn-add" onclick="openModal('simpleReminder')">+ Reminder</button>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:6px">How it works</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">Add any topic, task or note. Choose reminder intervals: <b style="color:var(--text)">1 day · 3 days · 7 days · 15 days · 1 month</b>. The app will send you a push notification at your set time on each of those days — no Anki needed.</div>
+    </div>
+    <div id="simpleReminderList"></div>
+  </div>
+  <div class="review-mode" id="studyReviewMode">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="exitReview()" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px">← Back</button>
+      <span id="reviewProgress" style="font-size:13px;color:var(--text2)"></span>
+    </div>
+    <div class="study-card-wrap">
+      <div class="study-card-inner" id="studyCardInner" onclick="flipCard()">
+        <div class="card-front">
+          <div class="card-q" id="cardQuestion"></div>
+          <div class="card-hint">Tap to reveal answer</div>
+        </div>
+        <div class="card-back">
+          <div class="card-a" id="cardAnswer"></div>
+        </div>
+      </div>
+    </div>
+    <div id="sm2Buttons" style="display:none">
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:8px">How well did you recall?</div>
+      <div class="study-btns">
+        <button class="sm2-btn sm2-again" onclick="sm2Rate(0)">Again<br><span style="font-size:10px;font-weight:400">&lt;1d</span></button>
+        <button class="sm2-btn sm2-hard" onclick="sm2Rate(2)">Hard<br><span style="font-size:10px;font-weight:400">~3d</span></button>
+        <button class="sm2-btn sm2-good" onclick="sm2Rate(4)">Good<br><span style="font-size:10px;font-weight:400">~7d</span></button>
+        <button class="sm2-btn sm2-easy" onclick="sm2Rate(5)">Easy<br><span style="font-size:10px;font-weight:400">~15d+</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="page" id="page-cal">
+  <div class="sec-header"><div class="sec-title">Calendar</div><button class="btn-add" onclick="openModal('event')">+ Event</button></div>
+  <div class="cal-nav">
+    <button onclick="changeMonth(-1)">‹</button>
+    <span class="cal-month" id="calMonth"></span>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="section-divider">Events</div>
+  <div id="eventList"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="showPage('home',this)"><span class="icon">🏠</span>Home</button>
+  <button class="nav-item" onclick="showPage('tasks',this)"><span class="icon">✅</span>Tasks</button>
+  <button class="nav-item" onclick="showPage('notes',this)"><span class="icon">📓</span>Notes</button>
+  <button class="nav-item" onclick="showPage('finance',this)"><span class="icon">💰</span>Finance</button>
+  <button class="nav-item" onclick="showPage('goals',this)"><span class="icon">🎯</span>Goals</button>
+  <button class="nav-item" onclick="showPage('study',this)"><span class="icon">🧠</span>Study</button>
+  <button class="nav-item" onclick="showPage('cal',this)"><span class="icon">📅</span>Cal</button>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const DB = {
+  load(k){ try{return JSON.parse(localStorage.getItem(k))||[]}catch{return []} },
+  save(k,v){ localStorage.setItem(k,JSON.stringify(v)) },
+  get tasks(){ return this.load('spm_tasks') }, set tasks(v){ this.save('spm_tasks',v) },
+  get notes(){ return this.load('spm_notes') }, set notes(v){ this.save('spm_notes',v) },
+  get finances(){ return this.load('spm_fin') }, set finances(v){ this.save('spm_fin',v) },
+  get goals(){ return this.load('spm_goals') }, set goals(v){ this.save('spm_goals',v) },
+  get habits(){ return this.load('spm_habits') }, set habits(v){ this.save('spm_habits',v) },
+  get cards(){ return this.load('spm_cards') }, set cards(v){ this.save('spm_cards',v) },
+  get events(){ return this.load('spm_events') }, set events(v){ this.save('spm_events',v) },
+  get reminders(){ return this.load('spm_reminders') }, set reminders(v){ this.save('spm_reminders',v) },
+  get noteCats(){ return this.load('spm_ncats')||['Personal','Work','Study','Ideas'] }, set noteCats(v){ this.save('spm_ncats',v) },
+};
+
+// ── UTILS ─────────────────────────────────────────────────
+const uid = ()=>Math.random().toString(36).substr(2,9);
+const today = ()=>new Date().toISOString().split('T')[0];
+const fmt = d=>new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const fmtMoney = n=>Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0});
+
+function showToast(msg,dur=2000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  renders[id]&&renders[id]();
+}
+
+// ── TOP DATE ──────────────────────────────────────────────
+function updateTopDate(){
+  const d=new Date();
+  document.getElementById('topDate').textContent=
+    d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+updateTopDate();
+
+// ── MODAL ─────────────────────────────────────────────────
+let currentModal='';
+function openModal(type,data){
+  currentModal=type;
+  document.getElementById('modalContent').innerHTML=getModalHTML(type,data);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+function closeModalOnBg(e){
+  if(e.target===document.getElementById('modalOverlay')) closeModal();
+}
+
+function getModalHTML(type,d){
+  const cats=(type==='task'?DB.taskCats:DB.noteCats);
+  if(type==='task') return `
+    <div class="modal-title">${d?'Edit':'New'} Task</div>
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f_title" value="${d?d.title:''}" placeholder="What needs to be done?"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f_cat">${DB.taskCats.map(c=>`<option ${d&&d.cat===c?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="f_pri"><option value="high" ${d&&d.pri==='high'?'selected':''}>🔴 High</option><option value="med" ${d&&d.pri==='med'?'selected':''}>🟡 Medium</option><option value="low" ${d&&d.pri==='low'?'selected':''}>🟢 Low</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="f_due" value="${d?d.due:today()}"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f_notes" placeholder="Optional notes...">${d?d.notes:''}</textarea></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveTask('${d?d.id:''}')">Save</button></div>`;
+
+  if(type==='note') return `
+    <div class="modal-title">New Note</div>
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f_title" placeholder="Note title..."></div>
+    <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f_cat">${DB.noteCats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Content</label><textarea class="form-textarea" id="f_content" style="min-height:120px" placeholder="Write your note..."></textarea></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveNote()">Save</button></div>`;
+
+  if(type==='finance') return `
+    <div class="modal-title">New Transaction</div>
+    <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="f_ftype"><option value="income">💚 Income</option><option value="expense">❤️ Expense</option></select></div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="f_title" placeholder="e.g. Salary, Groceries..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Amount (Rs.)</label><input type="number" class="form-input" id="f_amt" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="f_date" value="${today()}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f_fcat"><option>Food</option><option>Transport</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Salary</option><option>Business</option><option>Other</option></select></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveFinance()">Save</button></div>`;
+
+  if(type==='goal') return `
+    <div class="modal-title">New Goal</div>
+    <div class="form-group"><label class="form-label">Goal Title</label><input class="form-input" id="f_title" placeholder="e.g. Pass TSC Exam"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Target</label><input type="number" class="form-input" id="f_target" placeholder="100"></div>
+      <div class="form-group"><label class="form-label">Current</label><input type="number" class="form-input" id="f_current" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Unit</label><input class="form-input" id="f_unit" placeholder="e.g. chapters, days, %"></div>
+    <div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="f_due"></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveGoal()">Save</button></div>`;
+
+  if(type==='habit') return `
+    <div class="modal-title">New Habit</div>
+    <div class="form-group"><label class="form-label">Habit Name</label><input class="form-input" id="f_title" placeholder="e.g. Read 30 mins, Exercise"></div>
+    <div class="form-group"><label class="form-label">Icon/Emoji</label><input class="form-input" id="f_icon" placeholder="🔥" maxlength="2"></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveHabit()">Save</button></div>`;
+
+  if(type==='card') return `
+    <div class="modal-title">New Flashcard</div>
+    <div class="form-group"><label class="form-label">Question / Topic</label><textarea class="form-textarea" id="f_q" placeholder="Enter your question or topic to memorize..."></textarea></div>
+    <div class="form-group"><label class="form-label">Answer</label><textarea class="form-textarea" id="f_a" placeholder="Enter the answer or explanation..."></textarea></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveCard()">Save</button></div>`;
+
+  if(type==='simpleReminder') return `
+    <div class="modal-title">⏰ New Simple Reminder</div>
+    <div class="form-group"><label class="form-label">Topic / Title</label><input class="form-input" id="f_title" placeholder="e.g. Nepal History Chapter 3, Science Notes..."></div>
+    <div class="form-group"><label class="form-label">Note (optional)</label><textarea class="form-textarea" id="f_rnote" placeholder="What to study or review..."></textarea></div>
+    <div class="form-group">
+      <label class="form-label">Remind me after (select all that apply)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-size:13px"><input type="checkbox" id="ri_1" value="1" checked style="accent-color:var(--accent)"> 1 Day</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-size:13px"><input type="checkbox" id="ri_3" value="3" checked style="accent-color:var(--accent)"> 3 Days</label>
+        <label style="display:flex;align-items:center;gap=6px;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-size:13px"><input type="checkbox" id="ri_7" value="7" checked style="accent-color:var(--accent)"> 7 Days</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-size:13px"><input type="checkbox" id="ri_15" value="15" checked style="accent-color:var(--accent)"> 15 Days</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-size:13px"><input type="checkbox" id="ri_30" value="30" style="accent-color:var(--accent)"> 1 Month</label>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="f_rdate" value="${today()}"></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveSimpleReminder()">Save & Schedule</button></div>`;
+
+  if(type==='notifSettings'){
+    const ns=getNotifSettings();
+    const perm=('Notification' in window)?Notification.permission:'unsupported';
+    const permLabel=perm==='granted'?'✅ Allowed':perm==='denied'?'❌ Blocked':'⚠️ Not Set';
+    const permClass=perm==='granted'?'granted':perm==='denied'?'denied':'default';
+    return `
+    <div class="modal-title">🔔 Study Reminders</div>
+    <div class="notif-status ${permClass}" style="margin-bottom:16px;width:100%">
+      Notification Permission: ${permLabel}
+      ${perm!=='granted'?`<button onclick="requestNotifPerm()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--font)">Enable</button>`:''}
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">Daily Reminder</div><div class="notif-sub">Remind me to review due cards</div></div>
+      <label class="toggle-wrap"><input type="checkbox" id="f_notifOn" ${ns.enabled?'checked':''} onchange="previewNotifTime()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">Reminder Time</div><div class="notif-sub">What time to send daily reminder</div></div>
+      <input type="time" class="form-input" id="f_notifTime" value="${ns.time||'08:00'}" style="width:120px" onchange="previewNotifTime()">
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">Spaced Review Alerts</div><div class="notif-sub">Alert at: 1d · 3d · 7d · 15d · 30d</div></div>
+      <label class="toggle-wrap"><input type="checkbox" id="f_spacedOn" ${ns.spaced?'checked':''}><span class="toggle-slider"></span></label>
+    </div>
+    <div id="notifPreview" style="background:var(--bg3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);margin-top:4px"></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveNotifSettings()">Save</button></div>`;
+  }
+
+  if(type==='event') return `
+    <div class="modal-title">New Event</div>
+    <div class="form-group"><label class="form-label">Event Title</label><input class="form-input" id="f_title" placeholder="Event name..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="f_date" value="${today()}"></div>
+      <div class="form-group"><label class="form-label">Time</label><input type="time" class="form-input" id="f_time"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="f_notes" placeholder="Optional notes..."></div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveEvent()">Save</button></div>`;
+
+  return '';
+}
+
+// ── SAVE FUNCTIONS ────────────────────────────────────────
+function saveTask(editId){
+  const title=document.getElementById('f_title').value.trim();
+  if(!title){showToast('Enter a title');return;}
+  const tasks=DB.tasks;
+  if(editId){
+    const i=tasks.findIndex(t=>t.id===editId);
+    if(i>-1){ tasks[i].title=title; tasks[i].cat=document.getElementById('f_cat').value; tasks[i].pri=document.getElementById('f_pri').value; tasks[i].due=document.getElementById('f_due').value; tasks[i].notes=document.getElementById('f_notes').value; }
+  } else {
+    tasks.push({id:uid(),title,cat:document.getElementById('f_cat').value,pri:document.getElementById('f_pri').value,due:document.getElementById('f_due').value,notes:document.getElementById('f_notes').value,done:false,created:today()});
+  }
+  DB.tasks=tasks; closeModal(); renderTasks(); showToast('✅ Task saved');
+}
+
+function saveNote(){
+  const title=document.getElementById('f_title').value.trim();
+  const content=document.getElementById('f_content').value.trim();
+  if(!title){showToast('Enter a title');return;}
+  const notes=DB.notes;
+  notes.unshift({id:uid(),title,cat:document.getElementById('f_cat').value,content,created:today()});
+  DB.notes=notes; closeModal(); renderNotes(); showToast('📓 Note saved');
+}
+
+function saveFinance(){
+  const title=document.getElementById('f_title').value.trim();
+  const amt=parseFloat(document.getElementById('f_amt').value);
+  if(!title||isNaN(amt)){showToast('Fill all fields');return;}
+  const fins=DB.finances;
+  fins.unshift({id:uid(),title,type:document.getElementById('f_ftype').value,amount:amt,date:document.getElementById('f_date').value,cat:document.getElementById('f_fcat').value});
+  DB.finances=fins; closeModal(); renderFinance(); showToast('💰 Saved');
+}
+
+function saveGoal(){
+  const title=document.getElementById('f_title').value.trim();
+  if(!title){showToast('Enter a title');return;}
+  const goals=DB.goals;
+  goals.push({id:uid(),title,target:parseFloat(document.getElementById('f_target').value)||100,current:parseFloat(document.getElementById('f_current').value)||0,unit:document.getElementById('f_unit').value||'%',due:document.getElementById('f_due').value});
+  DB.goals=goals; closeModal(); renderGoals(); showToast('🎯 Goal added');
+}
+
+function saveHabit(){
+  const title=document.getElementById('f_title').value.trim();
+  if(!title){showToast('Enter a title');return;}
+  const habits=DB.habits;
+  habits.push({id:uid(),title,icon:document.getElementById('f_icon').value||'⭐',streak:0,history:[],created:today()});
+  DB.habits=habits; closeModal(); renderHabits(); showToast('🔥 Habit added');
+}
+
+function saveCard(){
+  const q=document.getElementById('f_q').value.trim();
+  const a=document.getElementById('f_a').value.trim();
+  if(!q||!a){showToast('Fill question and answer');return;}
+  const cards=DB.cards;
+  cards.push({id:uid(),q,a,interval:1,ef:2.5,reps:0,due:today(),created:today()});
+  DB.cards=cards; closeModal(); renderStudy(); showToast('🧠 Card added');
+}
+
+function saveEvent(){
+  const title=document.getElementById('f_title').value.trim();
+  const date=document.getElementById('f_date').value;
+  if(!title||!date){showToast('Fill required fields');return;}
+  const events=DB.events;
+  events.push({id:uid(),title,date,time:document.getElementById('f_time').value,notes:document.getElementById('f_notes').value});
+  DB.events=events; closeModal(); renderCalendar(); showToast('📅 Event added');
+}
+
+// ── DELETE FUNCTIONS ──────────────────────────────────────
+function delTask(id){ DB.tasks=DB.tasks.filter(t=>t.id!==id); renderTasks(); showToast('Deleted'); }
+function delNote(id){ DB.notes=DB.notes.filter(n=>n.id!==id); renderNotes(); showToast('Deleted'); }
+function delFinance(id){ DB.finances=DB.finances.filter(f=>f.id!==id); renderFinance(); showToast('Deleted'); }
+function delGoal(id){ DB.goals=DB.goals.filter(g=>g.id!==id); renderGoals(); showToast('Deleted'); }
+function delHabit(id){ DB.habits=DB.habits.filter(h=>h.id!==id); renderHabits(); showToast('Deleted'); }
+function delCard(id){ DB.cards=DB.cards.filter(c=>c.id!==id); renderStudy(); showToast('Deleted'); }
+function delEvent(id){ DB.events=DB.events.filter(e=>e.id!==id); renderCalendar(); showToast('Deleted'); }
+
+function toggleTask(id){
+  const tasks=DB.tasks; const t=tasks.find(t=>t.id===id);
+  if(t){ t.done=!t.done; DB.tasks=tasks; renderTasks(); }
+}
+
+function updateGoalProgress(id,val){
+  const goals=DB.goals; const g=goals.find(g=>g.id===id);
+  if(g){ g.current=Math.min(g.target,Math.max(0,parseFloat(val)||0)); DB.goals=goals; renderGoals(); }
+}
+
+// ── TASK RENDER ───────────────────────────────────────────
+let activeTaskCat='All';
+function renderTasks(){
+  const tabs=document.getElementById('taskTabs');
+  const cats=['All',...DB.taskCats];
+  tabs.innerHTML=cats.map(c=>`<button class="tab ${activeTaskCat===c?'active':''}" onclick="setTaskCat('${c}')">${c}</button>`).join('');
+  const tasks=DB.tasks.filter(t=>activeTaskCat==='All'||t.cat===activeTaskCat);
+  const list=document.getElementById('taskList');
+  if(!tasks.length){list.innerHTML=`<div class="empty"><div class="emoji">✅</div><p>No tasks yet. Add one!</p></div>`;return;}
+  const pending=tasks.filter(t=>!t.done), done=tasks.filter(t=>t.done);
+  list.innerHTML=[...pending,...done].map(t=>`
+    <div class="task-item ${t.done?'done':''}">
+      <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')">${t.done?'✓':''}</div>
+      <div style="flex:1;min-width:0">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          <span class="priority p-${t.pri}">${t.pri.toUpperCase()}</span>
+          <span style="margin-left:6px">${t.cat}</span>
+          ${t.due?`<span style="margin-left:6px">📅 ${fmt(t.due)}</span>`:''}
+        </div>
+      </div>
+      <button class="task-del" onclick="delTask('${t.id}')">🗑️</button>
+    </div>`).join('');
+}
+function setTaskCat(c){ activeTaskCat=c; renderTasks(); }
+
+// ── NOTES RENDER ──────────────────────────────────────────
+let activeNoteCat='All';
+function renderNotes(){
+  const tabs=document.getElementById('noteTabs');
+  const cats=['All',...DB.noteCats];
+  tabs.innerHTML=cats.map(c=>`<button class="tab ${activeNoteCat===c?'active':''}" onclick="setNoteCat('${c}')">${c}</button>`).join('');
+  const notes=DB.notes.filter(n=>activeNoteCat==='All'||n.cat===activeNoteCat);
+  const list=document.getElementById('noteList');
+  if(!notes.length){list.innerHTML=`<div class="empty"><div class="emoji">📓</div><p>No notes yet.</p></div>`;return;}
+  list.innerHTML=notes.map(n=>`
+    <div class="note-item" onclick="viewNote('${n.id}')">
+      <div style="display:flex;justify-content:space-between">
+        <div class="note-title">${n.title}</div>
+        <button class="task-del" onclick="event.stopPropagation();delNote('${n.id}')">🗑️</button>
+      </div>
+      <div class="note-preview">${n.content||'(no content)'}</div>
+      <div class="note-meta">${n.cat} · ${fmt(n.created)}</div>
+    </div>`).join('');
+}
+function setNoteCat(c){ activeNoteCat=c; renderNotes(); }
+function viewNote(id){
+  const n=DB.notes.find(n=>n.id===id);
+  if(!n) return;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">${n.title}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${n.cat} · ${fmt(n.created)}</div>
+    <div style="font-size:14px;line-height:1.7;white-space:pre-wrap">${n.content||'(empty)'}</div>
+    <div class="btn-row" style="margin-top:20px"><button class="btn-cancel" onclick="closeModal()">Close</button></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ── FINANCE RENDER ────────────────────────────────────────
+function renderFinance(){
+  const fins=DB.finances;
+  const income=fins.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0);
+  const expense=fins.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);
+  document.getElementById('finIncome').textContent='Rs.'+fmtMoney(income);
+  document.getElementById('finExpense').textContent='Rs.'+fmtMoney(expense);
+  document.getElementById('finBalance').textContent='Rs.'+fmtMoney(income-expense);
+  const list=document.getElementById('finList');
+  if(!fins.length){list.innerHTML=`<div class="empty"><div class="emoji">💰</div><p>No transactions yet.</p></div>`;return;}
+  list.innerHTML=fins.map(f=>`
+    <div class="task-item">
+      <div style="font-size:20px">${f.type==='income'?'💚':'❤️'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="task-title">${f.title}</div>
+        <div class="task-meta">${f.cat} · ${fmt(f.date)}</div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;color:${f.type==='income'?'var(--green)':'var(--red)'}">
+        ${f.type==='income'?'+':'-'}Rs.${fmtMoney(f.amount)}
+      </div>
+      <button class="task-del" style="margin-left:8px" onclick="delFinance('${f.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+// ── GOALS RENDER ──────────────────────────────────────────
+function switchGoalTab(tab,btn){
+  document.querySelectorAll('#page-goals .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('goalsSection').style.display=tab==='goals'?'block':'none';
+  document.getElementById('habitsSection').style.display=tab==='habits'?'block':'none';
+  if(tab==='goals') renderGoals(); else renderHabits();
+}
+function renderGoals(){
+  const list=document.getElementById('goalList');
+  const goals=DB.goals;
+  if(!goals.length){list.innerHTML=`<div class="empty"><div class="emoji">🎯</div><p>No goals yet.</p></div>`;return;}
+  list.innerHTML=goals.map(g=>{
+    const pct=Math.round((g.current/g.target)*100);
+    return `<div class="goal-item">
+      <div class="goal-top"><span class="goal-title">${g.title}</span><span class="goal-pct">${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,pct)}%"></div></div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <span style="font-size:12px;color:var(--text2)">${g.current}/${g.target} ${g.unit}</span>
+        <input type="number" style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:12px" value="${g.current}" onchange="updateGoalProgress('${g.id}',this.value)">
+        ${g.due?`<span style="font-size:11px;color:var(--text3)">📅 ${fmt(g.due)}</span>`:''}
+        <button class="task-del" onclick="delGoal('${g.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderHabits(){
+  const list=document.getElementById('habitList');
+  const habits=DB.habits;
+  if(!habits.length){list.innerHTML=`<div class="empty"><div class="emoji">🔥</div><p>No habits yet.</p></div>`;return;}
+  const td=today();
+  list.innerHTML=habits.map(h=>{
+    const last7=[...Array(7)].map((_,i)=>{
+      const d=new Date(); d.setDate(d.getDate()-6+i);
+      return d.toISOString().split('T')[0];
+    });
+    const doneToday=h.history&&h.history.includes(td);
+    const dots=last7.map(d=>`<div class="habit-dot ${h.history&&h.history.includes(d)?'done':''} ${d===td?'today':''}"></div>`).join('');
+    return `<div class="habit-item">
+      <div class="habit-top">
+        <span class="habit-name">${h.icon} ${h.title}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="habit-streak">🔥 ${h.streak||0}</span>
+          <button onclick="toggleHabit('${h.id}')" style="background:${doneToday?'var(--green)':'var(--card)'};border:1px solid ${doneToday?'var(--green)':'var(--border)'};color:${doneToday?'#fff':'var(--text2)'};padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font)">${doneToday?'✓ Done':'Mark Done'}</button>
+          <button class="task-del" onclick="delHabit('${h.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="habit-dots">${dots}</div>
+    </div>`;
+  }).join('');
+}
+function toggleHabit(id){
+  const habits=DB.habits; const h=habits.find(h=>h.id===id);
+  if(!h) return;
+  if(!h.history) h.history=[];
+  const td=today();
+  if(h.history.includes(td)){ h.history=h.history.filter(d=>d!==td); h.streak=Math.max(0,(h.streak||1)-1); }
+  else { h.history.push(td); h.streak=(h.streak||0)+1; }
+  DB.habits=habits; renderHabits();
+}
+
+// ── STUDY / SPACED REPETITION (SM-2) ─────────────────────
+let reviewQueue=[], reviewIdx=0, cardFlipped=false;
+
+function sm2NextInterval(card, quality){
+  // quality: 0=again, 2=hard, 4=good, 5=easy
+  if(quality < 3){
+    card.reps=0; card.interval=1;
+  } else {
+    if(card.reps===0) card.interval=1;
+    else if(card.reps===1) card.interval=3;
+    else card.interval=Math.round(card.interval * card.ef);
+    card.reps++;
+    card.ef=Math.max(1.3, card.ef + 0.1 - (5-quality)*(0.08+(5-quality)*0.02));
+  }
+  // Clamp to our schedule: 1,3,7,15,30+ days
+  if(card.interval<=1) card.interval=1;
+  else if(card.interval<=4) card.interval=3;
+  else if(card.interval<=10) card.interval=7;
+  else if(card.interval<=20) card.interval=15;
+  else card.interval=30;
+
+  const next=new Date(); next.setDate(next.getDate()+card.interval);
+  card.due=next.toISOString().split('T')[0];
+  return card;
+}
+
+function dueLabel(dueDate){
+  const diff=Math.round((new Date(dueDate)-new Date(today()))/(1000*60*60*24));
+  if(diff<=0) return '<span class="due-badge due-today">Due Today</span>';
+  if(diff<=3) return `<span class="due-badge due-soon">Due in ${diff}d</span>`;
+  return `<span class="due-badge due-later">Due in ${diff}d</span>`;
+}
+
+function renderStudy(){
+  const cards=DB.cards;
+  const td=today();
+  const due=cards.filter(c=>c.due<=td);
+  const mastered=cards.filter(c=>c.interval>=30);
+
+  document.getElementById('sDue').textContent=due.length;
+  document.getElementById('sTotal').textContent=cards.length;
+  document.getElementById('sMastered').textContent=mastered.length;
+
+  // Notif dot
+  document.getElementById('notifDot').classList.toggle('active', due.length>0);
+
+  const dueSection=document.getElementById('dueSection');
+  const allSection=document.getElementById('allCardsSection');
+
+  if(due.length>0){
+    dueSection.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="section-divider" style="margin:0">📚 Due for Review (${due.length})</div>
+        <button onclick="startReview()" style="background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">Start Review →</button>
+      </div>
+      ${due.map(c=>`<div class="deck-item">
+        <div class="deck-info"><div class="deck-q">${c.q.length>50?c.q.substr(0,50)+'...':c.q}</div><div class="deck-meta">${dueLabel(c.due)} · Interval: ${c.interval}d</div></div>
+      </div>`).join('')}`;
+  } else {
+    dueSection.innerHTML=`<div class="card" style="text-align:center;padding:20px"><div style="font-size:32px">🎉</div><div style="font-size:14px;color:var(--text2);margin-top:6px">All caught up! No reviews due.</div></div>`;
+  }
+
+  if(!cards.length){
+    allSection.innerHTML=`<div class="empty"><div class="emoji">🧠</div><p>Add your first flashcard to begin spaced repetition!</p></div>`;
+  } else {
+    const others=cards.filter(c=>c.due>td);
+    allSection.innerHTML=`
+      <div class="section-divider">All Cards (${cards.length})</div>
+      ${cards.map(c=>`<div class="deck-item">
+        <div class="deck-info" style="flex:1;min-width:0">
+          <div class="deck-q" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.q.length>45?c.q.substr(0,45)+'...':c.q}</div>
+          <div class="deck-meta">${dueLabel(c.due)} · Reps: ${c.reps} · EF: ${c.ef.toFixed(1)}</div>
+        </div>
+        <div class="deck-actions">
+          <button onclick="previewCard('${c.id}')">👁</button>
+          <button onclick="delCard('${c.id}')">🗑️</button>
+        </div>
+      </div>`).join('')}`;
+  }
+}
+
+function previewCard(id){
+  const c=DB.cards.find(c=>c.id===id);
+  if(!c) return;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-title">Flashcard Preview</div>
+    <div style="margin-bottom:12px"><div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:700">QUESTION</div><div style="font-size:14px;line-height:1.6">${c.q}</div></div>
+    <div><div style="font-size:11px;color:var(--accent2);margin-bottom:6px;font-weight:700">ANSWER</div><div style="font-size:14px;color:var(--accent2);line-height:1.6">${c.a}</div></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text3)">Next review: ${fmt(c.due)} · Interval: ${c.interval}d · Reps: ${c.reps}</div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-cancel" onclick="closeModal()">Close</button></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function startReview(){
+  const td=today();
+  reviewQueue=DB.cards.filter(c=>c.due<=td).map(c=>c.id);
+  if(!reviewQueue.length){showToast('No cards due!');return;}
+  reviewIdx=0; cardFlipped=false;
+  document.getElementById('studyListMode').classList.add('hidden');
+  document.getElementById('studyReviewMode').classList.add('active');
+  showReviewCard();
+}
+
+function exitReview(){
+  document.getElementById('studyListMode').classList.remove('hidden');
+  document.getElementById('studyReviewMode').classList.remove('active');
+  renderStudy();
+}
+
+function showReviewCard(){
+  if(reviewIdx>=reviewQueue.length){
+    document.getElementById('studyReviewMode').innerHTML=`
+      <div style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:16px">🎉</div>
+        <div style="font-size:20px;font-weight:700">Session Complete!</div>
+        <div style="font-size:14px;color:var(--text2);margin-top:8px">You reviewed ${reviewQueue.length} cards.</div>
+        <button onclick="exitReview()" style="margin-top:24px;background:var(--accent);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">Done ✓</button>
+      </div>`;
+    return;
+  }
+  const c=DB.cards.find(c=>c.id===reviewQueue[reviewIdx]);
+  if(!c){reviewIdx++;showReviewCard();return;}
+  cardFlipped=false;
+  document.getElementById('cardQuestion').textContent=c.q;
+  document.getElementById('cardAnswer').textContent=c.a;
+  document.getElementById('studyCardInner').classList.remove('flipped');
+  document.getElementById('sm2Buttons').style.display='none';
+  document.getElementById('reviewProgress').textContent=`Card ${reviewIdx+1} of ${reviewQueue.length}`;
+}
+
+function flipCard(){
+  if(cardFlipped) return;
+  cardFlipped=true;
+  document.getElementById('studyCardInner').classList.add('flipped');
+  setTimeout(()=>{ document.getElementById('sm2Buttons').style.display='block'; },400);
+}
+
+function sm2Rate(quality){
+  const cards=DB.cards;
+  const c=cards.find(c=>c.id===reviewQueue[reviewIdx]);
+  if(c){ sm2NextInterval(c,quality); DB.cards=cards; }
+  reviewIdx++;
+  cardFlipped=false;
+  showReviewCard();
+}
+
+// ── CALENDAR ──────────────────────────────────────────────
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+function renderCalendar(){
+  const d=new Date(calYear,calMonth,1);
+  document.getElementById('calMonth').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const grid=document.getElementById('calGrid');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const events=DB.events;
+  const eventDates=new Set(events.map(e=>e.date));
+  let html=days.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  const firstDay=d.getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const prevDays=new Date(calYear,calMonth,0).getDate();
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day other-month">${prevDays-firstDay+i+1}</div>`;
+  const td=today();
+  for(let i=1;i<=daysInMonth;i++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    const isToday=dateStr===td;
+    const hasEvent=eventDates.has(dateStr);
+    html+=`<div class="cal-day ${isToday?'today':''} ${hasEvent?'has-event':''}">${i}</div>`;
+  }
+  grid.innerHTML=html;
+  const evList=document.getElementById('eventList');
+  if(!events.length){evList.innerHTML=`<div class="empty"><div class="emoji">📅</div><p>No events yet.</p></div>`;return;}
+  evList.innerHTML=[...events].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`
+    <div class="task-item">
+      <div style="font-size:20px">📅</div>
+      <div style="flex:1;min-width:0">
+        <div class="task-title">${e.title}</div>
+        <div class="task-meta">${fmt(e.date)}${e.time?' · '+e.time:''} ${e.notes?'· '+e.notes:''}</div>
+      </div>
+      <button class="task-del" onclick="delEvent('${e.id}')">🗑️</button>
+    </div>`).join('');
+}
+function changeMonth(d){ calMonth+=d; if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderHome(){
+  const td=today();
+  const tasks=DB.tasks;
+  const pendingToday=tasks.filter(t=>!t.done&&t.due===td).length;
+  const totalPending=tasks.filter(t=>!t.done).length;
+  const duecards=DB.cards.filter(c=>c.due<=td).length;
+  const fins=DB.finances;
+  const balance=fins.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0)-fins.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);
+  const goals=DB.goals;
+  const habits=DB.habits;
+
+  const h=new Date().getHours();
+  const greeting=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('dashSub').textContent=`${totalPending} tasks pending · ${duecards} cards due`;
+
+  document.getElementById('dashCards').innerHTML=`
+    <div class="card" style="background:linear-gradient(135deg,#1e3a5f,#0f1f3d);border-color:#2d5080;margin-bottom:12px">
+      <div style="font-size:13px;color:var(--accent2);font-weight:700;margin-bottom:10px">TODAY'S OVERVIEW</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div onclick="showPage('tasks',document.querySelectorAll('.nav-item')[1])" style="cursor:pointer">
+          <div style="font-size:28px;font-weight:700;font-family:var(--mono)">${pendingToday}</div>
+          <div style="font-size:12px;color:var(--text2)">Tasks Today</div>
+        </div>
+        <div onclick="showPage('study',document.querySelectorAll('.nav-item')[5])" style="cursor:pointer">
+          <div style="font-size:28px;font-weight:700;font-family:var(--mono);color:${duecards>0?'var(--red)':'var(--green)'}">${duecards}</div>
+          <div style="font-size:12px;color:var(--text2)">Cards Due 🧠</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="card" onclick="showPage('finance',document.querySelectorAll('.nav-item')[3])" style="cursor:pointer">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Balance</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${balance>=0?'var(--green)':'var(--red)'}">Rs.${fmtMoney(balance)}</div>
+      </div>
+      <div class="card" onclick="showPage('goals',document.querySelectorAll('.nav-item')[4])" style="cursor:pointer">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Active Goals</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono)">${goals.length}</div>
+      </div>
+    </div>
+
+    ${duecards>0?`<div class="card" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:700">🧠 ${duecards} cards due for review!</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Keep your streak going with spaced repetition</div>
+        </div>
+        <button onclick="showPage('study',document.querySelectorAll('.nav-item')[5])" style="background:var(--red);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">Review</button>
+      </div>
+    </div>`:''}
+
+    ${habits.length?`<div class="card">
+      <div style="font-size:13px;color:var(--text2);font-weight:700;margin-bottom:10px">TODAY'S HABITS</div>
+      ${habits.slice(0,4).map(h=>{const done=h.history&&h.history.includes(td);return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px">${h.icon} ${h.title}</span>
+        <span style="font-size:12px;color:${done?'var(--green)':'var(--text3)'}">${done?'✅ Done':'⬜ Pending'}</span>
+      </div>`;}).join('')}
+    </div>`:''}
+  `;
+}
+
+// ── RENDER MAP ────────────────────────────────────────────
+const renders = {
+  home: renderHome,
+  tasks: renderTasks,
+  notes: renderNotes,
+  finance: renderFinance,
+  goals: renderGoals,
+  study: ()=>{ if(activeStudyMode==='anki') renderStudy(); else renderSimpleReminders(); },
+  cal: renderCalendar,
+};
+
+// ── PWA SETUP ─────────────────────────────────────────────
+function buildPWA(){
+  const canvas=document.createElement('canvas'); canvas.width=512; canvas.height=512;
+  const ctx=canvas.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,512,512);
+  grad.addColorStop(0,'#0f1827'); grad.addColorStop(1,'#1a2f50');
+  ctx.fillStyle=grad; ctx.beginPath();
+  ctx.roundRect(0,0,512,512,80); ctx.fill();
+  ctx.fillStyle='#3b82f6'; ctx.font='bold 280px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('S',256,240);
+  ctx.fillStyle='#94a3b8'; ctx.font='bold 52px Outfit,sans-serif';
+  ctx.fillText('PERSONAL MGR',256,410);
+  const ico=canvas.toDataURL('image/png');
+  document.getElementById('appleIcon').href=ico;
+  const manifest={name:'Sandeep Personal Management',short_name:'Sandeep PM',start_url:'.',display:'standalone',background_color:'#0a0e1a',theme_color:'#0a0e1a',icons:[{src:ico,sizes:'512x512',type:'image/png'},{src:ico,sizes:'192x192',type:'image/png'}]};
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  document.getElementById('pwaManifest').href=URL.createObjectURL(blob);
+}
+buildPWA();
+
+
+
+// ── STUDY MODE TABS ───────────────────────────────────────
+let activeStudyMode = 'anki';
+function switchStudyMode(mode, btn){
+  activeStudyMode = mode;
+  document.querySelectorAll('#studyModeTabs .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ankiMode').style.display   = mode==='anki'   ? 'block' : 'none';
+  document.getElementById('simpleMode').style.display = mode==='simple' ? 'block' : 'none';
+  if(mode==='anki')   renderStudy();
+  if(mode==='simple') renderSimpleReminders();
+}
+
+// ── SIMPLE REMINDERS ──────────────────────────────────────
+function addDays(dateStr, n){
+  const d=new Date(dateStr); d.setDate(d.getDate()+n);
+  return d.toISOString().split('T')[0];
+}
+
+function saveSimpleReminder(){
+  const title=document.getElementById('f_title').value.trim();
+  if(!title){showToast('Enter a topic title');return;}
+  const note=document.getElementById('f_rnote').value.trim();
+  const start=document.getElementById('f_rdate').value||today();
+  const intervals=[1,3,7,15,30].filter(n=>{
+    const el=document.getElementById('ri_'+n);
+    return el && el.checked;
+  });
+  if(!intervals.length){showToast('Pick at least one interval');return;}
+
+  const reminders=DB.reminders;
+  const rid=uid();
+  const schedule=intervals.map(n=>({
+    days:n,
+    date:addDays(start,n),
+    sent:false
+  }));
+  reminders.unshift({id:rid,title,note,start,schedule,created:today()});
+  DB.reminders=reminders;
+  closeModal();
+  renderSimpleReminders();
+  scheduleSimpleReminderNotifs(reminders[0]);
+  showToast('⏰ Reminder saved & scheduled!');
+}
+
+function delReminder(id){
+  DB.reminders=DB.reminders.filter(r=>r.id!==id);
+  renderSimpleReminders();
+  showToast('Deleted');
+}
+
+function renderSimpleReminders(){
+  const list=document.getElementById('simpleReminderList');
+  if(!list) return;
+  const reminders=DB.reminders;
+  if(!reminders.length){
+    list.innerHTML=`<div class="empty"><div class="emoji">⏰</div><p>No reminders yet.<br>Add a topic to get push notifications.</p></div>`;
+    return;
+  }
+  const td=today();
+  list.innerHTML=reminders.map(r=>{
+    const upcoming=r.schedule.filter(s=>!s.sent && s.date>=td).sort((a,b)=>a.date.localeCompare(b.date));
+    const done=r.schedule.filter(s=>s.sent||s.date<td);
+    const nextUp=upcoming[0];
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:700">${r.title}</div>
+          ${r.note?`<div style="font-size:12px;color:var(--text2);margin-top:3px;white-space:pre-wrap">${r.note}</div>`:''}
+        </div>
+        <button class="task-del" onclick="delReminder('${r.id}')">🗑️</button>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+        ${r.schedule.map(s=>{
+          const isPast=s.date<td||s.sent;
+          const isNext=nextUp&&s.days===nextUp.days;
+          return `<div style="padding:4px 10px;border-radius:16px;font-size:11px;font-weight:700;border:1px solid ${isPast?'var(--border)':isNext?'var(--accent)':'var(--border)'};background:${isPast?'transparent':isNext?'rgba(59,130,246,0.15)':'var(--bg3)'};color:${isPast?'var(--text3)':isNext?'var(--accent)':'var(--text2)'}">
+            ${isPast?'✓':isNext?'⏰':'🕐'} ${s.days===30?'1mo':s.days+'d'}${!isPast?' · '+fmt(s.date):''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${nextUp?`<div style="font-size:11px;color:var(--accent);margin-top:8px">📲 Next reminder: <b>${fmt(nextUp.date)}</b> (${nextUp.days===30?'1 month':nextUp.days+' days'})</div>`:`<div style="font-size:11px;color:var(--green);margin-top:8px">✅ All reminders sent!</div>`}
+    </div>`;
+  }).join('');
+}
+
+function scheduleSimpleReminderNotifs(reminder){
+  if(Notification.permission!=='granted') return;
+  const ns=getNotifSettings();
+  const [h,m]=(ns.time||'08:00').split(':').map(Number);
+  const now=new Date();
+  const td=today();
+
+  reminder.schedule.forEach(s=>{
+    if(s.sent || s.date < td) return;
+    const fire=new Date(s.date);
+    fire.setHours(h,m,0,0);
+    const ms=fire-now;
+    if(ms>0 && ms<40*24*60*60*1000){
+      setTimeout(()=>{
+        if(Notification.permission!=='granted') return;
+        const label=s.days===1?'yesterday':s.days===30?'1 month ago':s.days+' days ago';
+        const n=new Notification(`⏰ Study Reminder: ${reminder.title}`,{
+          body:`You added "${reminder.title}" ${label}. Time for your ${s.days===30?'monthly':s.days+'-day'} review! 📚`,
+          tag:'spm-reminder-'+reminder.id+'-'+s.days,
+          icon:localStorage.getItem('spm_icon')||'',
+          requireInteraction:true,
+        });
+        n.onclick=()=>{ window.focus(); showPage('study',document.querySelectorAll('.nav-item')[5]); n.close(); };
+        // Mark as sent
+        const reminders=DB.reminders;
+        const r=reminders.find(r=>r.id===reminder.id);
+        if(r){ const sv=r.schedule.find(sv=>sv.days===s.days); if(sv) sv.sent=true; DB.reminders=reminders; }
+        if(activeStudyMode==='simple') renderSimpleReminders();
+      }, ms);
+    }
+  });
+}
+
+function rescheduleAllSimpleReminders(){
+  DB.reminders.forEach(r=>scheduleSimpleReminderNotifs(r));
+}
+
+// ── PUSH NOTIFICATION ENGINE ──────────────────────────────
+
+function getNotifSettings(){
+  try{ return JSON.parse(localStorage.getItem('spm_notif'))||{enabled:false,time:'08:00',spaced:true}; }
+  catch{ return {enabled:false,time:'08:00',spaced:true}; }
+}
+function saveNotifSettingsData(s){ localStorage.setItem('spm_notif',JSON.stringify(s)); }
+
+function saveNotifSettings(){
+  const enabled=document.getElementById('f_notifOn').checked;
+  const time=document.getElementById('f_notifTime').value||'08:00';
+  const spaced=document.getElementById('f_spacedOn').checked;
+  saveNotifSettingsData({enabled,time,spaced});
+  if(enabled && Notification.permission!=='granted'){
+    requestNotifPermThen(()=>{ scheduleAllNotifs(); rescheduleAllSimpleReminders(); closeModal(); showToast('🔔 Reminders set for '+time); });
+  } else {
+    scheduleAllNotifs();
+    rescheduleAllSimpleReminders();
+    closeModal();
+    showToast(enabled?'🔔 Reminders set for '+time:'🔕 Reminders off');
+  }
+}
+
+function requestNotifPerm(){
+  if(!('Notification' in window)){ showToast('Notifications not supported'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted') showToast('✅ Notifications allowed!');
+    else showToast('❌ Permission denied');
+    openModal('notifSettings');
+  });
+}
+function requestNotifPermThen(cb){
+  if(!('Notification' in window)){ cb(); return; }
+  Notification.requestPermission().then(p=>{ if(p==='granted') cb(); else showToast('❌ Permission denied — enable in browser settings'); });
+}
+
+function previewNotifTime(){
+  const t=document.getElementById('f_notifTime');
+  const on=document.getElementById('f_notifOn');
+  const prev=document.getElementById('notifPreview');
+  if(!t||!prev) return;
+  if(!on.checked){ prev.textContent='Reminders are off.'; return; }
+  const [h,m]=t.value.split(':').map(Number);
+  const ap=h>=12?'PM':'AM'; const hr=h%12||12;
+  prev.textContent=`You'll get a daily notification at ${hr}:${String(m).padStart(2,'0')} ${ap} when cards are due.`;
+}
+
+// ── SCHEDULING ────────────────────────────────────────────
+// We use a combination of:
+// 1. setTimeout for same-session scheduling
+// 2. localStorage timestamps so on app open we fire missed ones
+// 3. Service Worker postMessage for background scheduling
+
+let _notifTimer=null;
+
+function scheduleAllNotifs(){
+  const ns=getNotifSettings();
+  if(!ns.enabled) return;
+  if(Notification.permission!=='granted') return;
+
+  // Clear existing timer
+  if(_notifTimer) clearTimeout(_notifTimer);
+
+  // Schedule today's daily reminder
+  scheduleDailyReminder(ns.time);
+
+  // Schedule spaced repetition card-specific notifications
+  if(ns.spaced) scheduleSpacedNotifs();
+
+  // Tell service worker to wake up at the right time
+  sendSWSchedule(ns);
+}
+
+function scheduleDailyReminder(timeStr){
+  const [h,m]=timeStr.split(':').map(Number);
+  const now=new Date();
+  const fire=new Date();
+  fire.setHours(h,m,0,0);
+  if(fire<=now) fire.setDate(fire.getDate()+1); // next day if past
+  const ms=fire-now;
+  _notifTimer=setTimeout(()=>{
+    fireDailyNotif();
+    // Re-schedule for next day
+    setTimeout(()=>scheduleDailyReminder(timeStr), 500);
+  }, ms);
+  // Persist next fire time
+  localStorage.setItem('spm_nextFire', fire.toISOString());
+}
+
+function fireDailyNotif(){
+  if(Notification.permission!=='granted') return;
+  const due=DB.cards.filter(c=>c.due<=today()).length;
+  if(due===0) return; // nothing due, skip
+  const n=new Notification('📚 Sandeep PM — Study Time!',{
+    body:`You have ${due} flashcard${due>1?'s':''} due for review. Keep your streak going! 🔥`,
+    icon: localStorage.getItem('spm_icon')||'',
+    badge: localStorage.getItem('spm_icon')||'',
+    tag:'spm-daily',
+    requireInteraction: false,
+    silent: false,
+  });
+  n.onclick=()=>{ window.focus(); showPage('study',document.querySelectorAll('.nav-item')[5]); n.close(); };
+}
+
+function scheduleSpacedNotifs(){
+  // For each card, compute ms until due and schedule a notification
+  const ns=getNotifSettings();
+  const [h,m]=(ns.time||'08:00').split(':').map(Number);
+  const cards=DB.cards;
+  const now=new Date();
+
+  cards.forEach(card=>{
+    const due=new Date(card.due);
+    due.setHours(h,m,0,0);
+    const ms=due-now;
+    if(ms>0 && ms < 35*24*60*60*1000){ // within 35 days
+      setTimeout(()=>{
+        if(Notification.permission!=='granted') return;
+        const n=new Notification('🧠 Time to Review!',{
+          body:`"${card.q.length>60?card.q.substr(0,60)+'...':card.q}" is due for review today.`,
+          tag:'spm-card-'+card.id,
+          icon: localStorage.getItem('spm_icon')||'',
+          requireInteraction: false,
+        });
+        n.onclick=()=>{ window.focus(); showPage('study',document.querySelectorAll('.nav-item')[5]); n.close(); };
+      }, ms);
+    }
+  });
+}
+
+function sendSWSchedule(ns){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active){
+      reg.active.postMessage({type:'SCHEDULE_NOTIF', settings:ns, cards:DB.cards.map(c=>({id:c.id,q:c.q,due:c.due}))});
+    }
+  });
+}
+
+// ── ON APP OPEN: check if we missed a notification ────────
+function checkMissedNotifs(){
+  const ns=getNotifSettings();
+  if(!ns.enabled || Notification.permission!=='granted') return;
+  const due=DB.cards.filter(c=>c.due<=today()).length;
+  const lastNotif=localStorage.getItem('spm_lastNotif');
+  const td=today();
+  if(due>0 && lastNotif!==td){
+    // Show it immediately (app was opened, cards are due)
+    setTimeout(()=>{
+      const n=new Notification('📚 Sandeep PM — Cards Due!',{
+        body:`${due} flashcard${due>1?'s':''} waiting for review. Open the Study tab to begin.`,
+        tag:'spm-missed',
+        icon: localStorage.getItem('spm_icon')||'',
+      });
+      n.onclick=()=>{ window.focus(); showPage('study',document.querySelectorAll('.nav-item')[5]); n.close(); };
+      localStorage.setItem('spm_lastNotif', td);
+    }, 3000);
+  }
+}
+
+// ── SERVICE WORKER (enhanced with push) ──────────────────
+function buildServiceWorker(){
+  const sw=`
+const C='spm-v3';
+self.addEventListener('install', e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['.']))));
+self.addEventListener('fetch', e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+
+// Receive schedule from main thread
+self.addEventListener('message', e=>{
+  if(e.data&&e.data.type==='SCHEDULE_NOTIF'){
+    const {settings, cards} = e.data;
+    // Store in SW scope for periodic checks
+    self.notifSettings = settings;
+    self.studyCards = cards;
+  }
+});
+
+// Show notification from SW
+self.addEventListener('notificationclick', e=>{
+  e.notification.close();
+  e.waitUntil(clients.matchAll({type:'window'}).then(cs=>{
+    if(cs.length) return cs[0].focus();
+    return clients.openWindow('.');
+  }));
+});
+`;
+  const blob=new Blob([sw],{type:'text/javascript'});
+  return URL.createObjectURL(blob);
+}
+
+// Re-register improved SW
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register(buildServiceWorker()).then(reg=>{
+    // Store icon for notifications
+    const canvas=document.createElement('canvas'); canvas.width=192; canvas.height=192;
+    const ctx=canvas.getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,192,192);
+    grad.addColorStop(0,'#0f1827'); grad.addColorStop(1,'#1a2f50');
+    ctx.fillStyle=grad; ctx.beginPath(); ctx.roundRect(0,0,192,192,30); ctx.fill();
+    ctx.fillStyle='#3b82f6'; ctx.font='bold 110px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('S',96,96);
+    localStorage.setItem('spm_icon', canvas.toDataURL());
+  });
+}
+
+// ── INIT NOTIF ON LOAD ────────────────────────────────────
+window.addEventListener('load', ()=>{
+  const ns=getNotifSettings();
+  if(ns.enabled && Notification.permission==='granted'){
+    scheduleAllNotifs();
+    checkMissedNotifs();
+    rescheduleAllSimpleReminders();
+  }
+});
+
+
+renderHome();
+
+// Check due cards on load
+const dueonload=DB.cards.filter(c=>c.due<=today()).length;
+if(dueonload>0){ document.getElementById('notifDot').classList.add('active'); }
+</script>
+</body>
+</html>
